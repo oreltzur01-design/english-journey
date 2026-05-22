@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lamar – Idle Vlogger</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d0d14;--panel:#16161f;--border:#2a2a3a;
+    --gold:#f5c518;--green:#4ade80;--red:#f87171;
+    --blue:#60a5fa;--muted:#6b7280;--text:#e2e8f0;
+    --click-btn:#f5c518;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
+    display:flex;flex-direction:column;align-items:center;min-height:100vh;
+    overflow-x:hidden;}
+
+  /* ── Header ── */
+  header{width:100%;max-width:900px;padding:16px 20px 8px;
+    display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:1.4rem;color:var(--gold);letter-spacing:.05em}
+  header .save-btn{background:none;border:1px solid var(--border);color:var(--muted);
+    padding:4px 12px;border-radius:6px;cursor:pointer;font-size:.8rem}
+  header .save-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ── Stats bar ── */
+  .stats{width:100%;max-width:900px;display:grid;grid-template-columns:repeat(3,1fr);
+    gap:10px;padding:0 20px 12px;}
+  .stat-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:10px 14px;}
+  .stat-card .label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .stat-card .value{font-size:1.3rem;font-weight:700;margin-top:2px}
+  #moneyVal{color:var(--gold)}
+  #mpsVal{color:var(--green)}
+  #followersVal{color:var(--blue)}
+
+  /* ── Stage bar ── */
+  .stage-bar{width:100%;max-width:900px;padding:0 20px 14px;}
+  .stage-info{display:flex;justify-content:space-between;font-size:.8rem;
+    color:var(--muted);margin-bottom:5px;}
+  .stage-info .name{color:var(--text);font-weight:600}
+  .progress-track{background:var(--border);border-radius:999px;height:8px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));
+    border-radius:999px;transition:width .4s ease}
+
+  /* ── Main grid ── */
+  .grid{width:100%;max-width:900px;padding:0 20px;display:grid;
+    grid-template-columns:1fr 1fr;gap:14px;}
+
+  /* ── Click zone ── */
+  .click-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:28px 16px;position:relative;overflow:hidden;cursor:pointer;
+    user-select:none;-webkit-user-select:none;}
+  .click-zone:active .click-circle{transform:scale(.93)}
+  .click-circle{width:140px;height:140px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#ffe066,var(--gold),#b8860b);
+    box-shadow:0 0 40px rgba(245,197,24,.35);
+    display:flex;align-items:center;justify-content:center;
+    font-size:3.5rem;transition:transform .08s ease;cursor:pointer}
+  .click-zone h3{margin-top:14px;color:var(--gold);font-size:.95rem}
+  .click-zone p{font-size:.78rem;color:var(--muted);margin-top:4px}
+
+  /* ── Upgrade panel ── */
+  .upgrade-panel{background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px;
+    max-height:420px;overflow-y:auto;}
+  .upgrade-panel h2{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .upgrade-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+    display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:border-color .15s,background .15s}
+  .upgrade-item.can-afford{border-color:var(--green);background:rgba(74,222,128,.05)}
+  .upgrade-item.can-afford:hover{background:rgba(74,222,128,.12)}
+  .upgrade-item.cant-afford{opacity:.6}
+  .upgrade-item .upg-top{display:flex;justify-content:space-between;align-items:baseline}
+  .upgrade-item .upg-name{font-weight:600;font-size:.88rem}
+  .upgrade-item .upg-level{font-size:.72rem;color:var(--muted)}
+  .upgrade-item .upg-cost{font-size:.8rem;color:var(--gold)}
+  .upgrade-item.cant-afford .upg-cost{color:var(--red)}
+  .upgrade-item .upg-boost{font-size:.72rem;color:var(--green)}
+
+  /* ── Offline popup ── */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;
+    align-items:center;justify-content:center;z-index:100}
+  .popup{background:var(--panel);border:1px solid var(--gold);border-radius:16px;
+    padding:32px;text-align:center;max-width:340px;box-shadow:0 0 60px rgba(245,197,24,.2)}
+  .popup h2{color:var(--gold);font-size:1.3rem;margin-bottom:8px}
+  .popup p{color:var(--muted);font-size:.9rem;line-height:1.6}
+  .popup .earn{color:var(--green);font-size:1.4rem;font-weight:700;margin:14px 0}
+  .popup button{background:var(--gold);color:#000;border:none;border-radius:8px;
+    padding:10px 28px;font-size:.95rem;font-weight:700;cursor:pointer}
+  .popup button:hover{background:#ffd600}
+  .hidden{display:none}
+
+  /* ── Floating +$ text ── */
+  .float-text{position:fixed;pointer-events:none;font-weight:700;font-size:1rem;
+    color:var(--gold);text-shadow:0 2px 8px rgba(0,0,0,.6);
+    animation:floatUp .9s ease forwards;z-index:200}
+  @keyframes floatUp{
+    0%{opacity:1;transform:translateY(0) scale(1)}
+    100%{opacity:0;transform:translateY(-70px) scale(1.2)}
+  }
+
+  /* ── Toast ── */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:8px 20px;font-size:.85rem;color:var(--text);
+    transition:opacity .3s;opacity:0;pointer-events:none;z-index:300}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- Offline popup -->
+<div class="overlay hidden" id="offlineOverlay">
+  <div class="popup">
+    <h2>Welcome Back! 👋</h2>
+    <p>You were away and your content kept earning:</p>
+    <div class="earn" id="offlineAmount"></div>
+    <button onclick="closePopup()">Collect</button>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <h1>🎬 Lamar – Idle Vlogger</h1>
+  <button class="save-btn" onclick="saveGame()">💾 Save</button>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="label">💰 Money</div>
+    <div class="value" id="moneyVal">$0</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">📈 Income / sec</div>
+    <div class="value" id="mpsVal">$0/s</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">👥 Followers</div>
+    <div class="value" id="followersVal">0</div>
+  </div>
+</div>
+
+<!-- Stage bar -->
+<div class="stage-bar">
+  <div class="stage-info">
+    <span class="name" id="stageName">Lod Apartment</span>
+    <span id="stageProgress">0 / 1,000 followers</span>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- Main grid -->
+<div class="grid">
+  <!-- Click zone -->
+  <div class="click-zone" id="clickZone">
+    <div class="click-circle" id="clickCircle">🎥</div>
+    <h3>Film Content</h3>
+    <p>Click to earn money & followers</p>
+  </div>
+
+  <!-- Upgrades -->
+  <div class="upgrade-panel">
+    <h2>Upgrades</h2>
+    <div id="upgradeList"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Game Data ─────────────────────────────────────────────────────────────────
+const STAGES = [
+  { name:'Lod Apartment',                reqFollowers:0,         transitionCost:2500 },
+  { name:'Rishon LeZion',                reqFollowers:1000,      transitionCost:35000 },
+  { name:'Gag Apartment & Shopify Store',reqFollowers:30000,     transitionCost:400000 },
+  { name:'Tel Aviv Penthouse',           reqFollowers:250000,    transitionCost:3000000 },
+  { name:'Herzliya Villa & Porsche',     reqFollowers:1500000,   transitionCost:0 },
+];
+
+const UPGRADES = [
+  { name:'Smartphone',      baseCost:50,      costMult:1.15, incomeBoost:0.5,   icon:'📱' },
+  { name:'Ring Light',      baseCost:200,     costMult:1.15, incomeBoost:2,     icon:'💡' },
+  { name:'Camera',          baseCost:1000,    costMult:1.15, incomeBoost:8,     icon:'📷' },
+  { name:'Editing PC',      baseCost:5000,    costMult:1.15, incomeBoost:30,    icon:'🖥️' },
+  { name:'Sponsorship Deal',baseCost:25000,   costMult:1.18, incomeBoost:120,   icon:'🤝' },
+  { name:'Merch Store',     baseCost:100000,  costMult:1.20, incomeBoost:500,   icon:'👕' },
+  { name:'YouTube Manager', baseCost:500000,  costMult:1.20, incomeBoost:2000,  icon:'🧑‍💼' },
+];
+
+const BASE_CLICK = 1;
+const SAVE_KEY = 'lamarIdleGame';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  money: 0,
+  mps: 0,
+  followers: 0,
+  upgradeLevels: {},
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3)  return (n/1e3).toFixed(2)+'K';
+  return Math.floor(n).toLocaleString();
+}
+
+function calcCost(upg, level) {
+  return upg.baseCost * Math.pow(upg.costMult, level);
+}
+
+function getCurrentStage() {
+  let s = STAGES[0];
+  for (const stage of STAGES) {
+    if (state.followers >= stage.reqFollowers) s = stage;
+    else break;
+  }
+  return s;
+}
+
+function getNextStage() {
+  return STAGES.find(s => s.reqFollowers > state.followers) || null;
+}
+
+// ── Game Logic ────────────────────────────────────────────────────────────────
+function clickAction(x, y) {
+  state.money += BASE_CLICK;
+  state.followers += 0.05;
+  spawnFloat(x, y, `+$${BASE_CLICK}`);
+  updateUI();
+}
+
+function buyUpgrade(idx) {
+  const upg = UPGRADES[idx];
+  const level = state.upgradeLevels[upg.name] || 0;
+  const cost = calcCost(upg, level);
+  if (state.money < cost) { toast(`Need $${fmt(cost)}`); return; }
+  state.money -= cost;
+  state.upgradeLevels[upg.name] = level + 1;
+  state.mps += upg.incomeBoost;
+  state.followers += upg.incomeBoost * 0.5;
+  toast(`${upg.icon} ${upg.name} → Lv${level+1}! +$${fmt(upg.incomeBoost)}/s`);
+  updateUI();
+}
+
+// ── Passive tick ──────────────────────────────────────────────────────────────
+let last = performance.now();
+function tick() {
+  const now = performance.now();
+  const dt = (now - last) / 1000;
+  last = now;
+  state.money += state.mps * dt;
+  state.followers += state.mps * dt * 0.001;
+  updateUI();
+  requestAnimationFrame(tick);
+}
+
+// ── Save / Load ───────────────────────────────────────────────────────────────
+function saveGame() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify({
+    ...state,
+    quitTime: new Date().toISOString(),
+  }));
+  toast('Game saved ✓');
+}
+
+function loadGame() {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    state.money = data.money || 0;
+    state.mps   = data.mps   || 0;
+    state.followers = data.followers || 0;
+    state.upgradeLevels = data.upgradeLevels || {};
+    if (data.quitTime && state.mps > 0) {
+      const secs = Math.max(0, (Date.now() - new Date(data.quitTime).getTime()) / 1000);
+      const earned = secs * state.mps;
+      if (earned > 0.01) {
+        state.money += earned;
+        document.getElementById('offlineAmount').textContent = `$${fmt(earned)}`;
+        document.getElementById('offlineOverlay').classList.remove('hidden');
+      }
+    }
+  } catch(e) {}
+}
+
+function closePopup() {
+  document.getElementById('offlineOverlay').classList.add('hidden');
+}
+
+// ── Floating text ─────────────────────────────────────────────────────────────
+function spawnFloat(x, y, text) {
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  el.style.left = (x - 20) + 'px';
+  el.style.top  = (y - 10) + 'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── UI Render ─────────────────────────────────────────────────────────────────
+function updateUI() {
+  document.getElementById('moneyVal').textContent     = `$${fmt(state.money)}`;
+  document.getElementById('mpsVal').textContent       = `$${fmt(state.mps)}/s`;
+  document.getElementById('followersVal').textContent = fmt(state.followers);
+
+  // Stage
+  const stage = getCurrentStage();
+  const next  = getNextStage();
+  document.getElementById('stageName').textContent = stage.name;
+  if (next) {
+    const pct = Math.min(100, (state.followers / next.reqFollowers) * 100);
+    document.getElementById('stageProgress').textContent =
+      `${fmt(state.followers)} / ${fmt(next.reqFollowers)} followers`;
+    document.getElementById('progressFill').style.width = pct + '%';
+  } else {
+    document.getElementById('stageProgress').textContent = '★ Max Stage';
+    document.getElementById('progressFill').style.width = '100%';
+  }
+
+  // Upgrades
+  const list = document.getElementById('upgradeList');
+  list.innerHTML = '';
+  UPGRADES.forEach((upg, i) => {
+    const level = state.upgradeLevels[upg.name] || 0;
+    const cost  = calcCost(upg, level);
+    const can   = state.money >= cost;
+    const div = document.createElement('div');
+    div.className = `upgrade-item ${can ? 'can-afford' : 'cant-afford'}`;
+    div.innerHTML = `
+      <div class="upg-top">
+        <span class="upg-name">${upg.icon} ${upg.name}</span>
+        <span class="upg-level">Lv ${level}</span>
+      </div>
+      <div class="upg-cost">💰 $${fmt(cost)}</div>
+      <div class="upg-boost">+$${fmt(upg.incomeBoost)}/s per level</div>
+    `;
+    div.addEventListener('click', () => buyUpgrade(i));
+    list.appendChild(div);
+  });
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+loadGame();
+updateUI();
+requestAnimationFrame(tick);
+
+// Click zone
+document.getElementById('clickZone').addEventListener('click', e => {
+  clickAction(e.clientX, e.clientY);
+});
+
+// Auto-save every 30s
+setInterval(saveGame, 30000);
+
+// Save on close
+window.addEventListener('beforeunload', saveGame);
+</script>
+</body>
+</html>
